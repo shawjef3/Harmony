@@ -2,28 +2,28 @@ package harmony.tocats.typeclass
 
 import harmony._
 
-trait CatsAlternative[F[_], F0[_]] extends CatsApplicative[F, F0] {
-  self: cats.Alternative[F0] =>
+trait CatsAlternative[F[_], G[_], G0[_], F0[_]] extends CatsApplicative[F, G, G0, F0] {
+  self: cats.Alternative[G] =>
 
   protected implicit val scalazApplicativePlus: scalaz.ApplicativePlus[F]
   override protected implicit val scalazApplicative: scalaz.Applicative[F] = scalazApplicativePlus
 
-  override def empty[A]: F0[A] =
+  override def empty[A]: G[A] =
     trans(scalazApplicativePlus.empty[A])
 
-  override def combineK[A](x: F0[A], y: F0[A]): F0[A] =
-    trans(scalazApplicativePlus.plus(trans.reverse(x), trans.reverse(y)))
+  override def combineK[A](x: G[A], y: G[A]): G[A] =
+    trans(scalazApplicativePlus.plus(transReverse(x), transReverse(y)))
 
 }
 
 trait AlternativeConverter {
 
-  implicit def scalazToCatsAlternative[F[_], F0[_]](implicit inner: scalaz.ApplicativePlus[F], t: ReversableNatTrans[F, F0]): cats.Alternative[F0] =
-    new CatsAlternative[F, F0] with cats.Alternative[F0] {
-      override protected implicit val trans: ReversableNatTrans[F, F0] = t
+  implicit def scalazToCatsAlternative[F[_], G[_], G0[_], F0[_]](implicit inner: scalaz.ApplicativePlus[F], t: ReversableNatTrans[F, G, G0, F0]): cats.Alternative[G] =
+    new CatsAlternative[F, G, G0, F0] with cats.Alternative[G] {
+      override protected implicit val trans: ReversableNatTrans[F, G, G0, F0] = t
       override protected implicit val scalazApplicativePlus: scalaz.ApplicativePlus[F] = inner
 
-      override def imap[A, B](fa: F0[A])(f: (A) => B)(fi: (B) => A): F0[B] =
+      override def imap[A, B](fa: G[A])(f: (A) => B)(fi: (B) => A): G[B] =
         CatsInvariantFunctor.imap(fa)(f, fi)(scalazInvariantFunctor, t)
     }
 
@@ -31,28 +31,28 @@ trait AlternativeConverter {
 
 object AlternativeConverter extends AlternativeConverter
 
-trait CatsApplicative[F[_], F0[_]] extends CatsApply[F, F0] {
-  self: cats.Applicative[F0] =>
+trait CatsApplicative[F[_], G[_], G0[_], F0[_]] extends CatsApply[F, G, G0, F0] {
+  self: cats.Applicative[G] =>
 
   protected implicit val scalazApplicative: scalaz.Applicative[F]
   override protected implicit val scalazApply: scalaz.Apply[F] = scalazApplicative
 
-  override def ap[A, B](ff: F0[(A) => B])(fa: F0[A]): F0[B] =
-    trans(scalazApplicative.ap(trans.reverse(fa))(trans.reverse(ff)))
+  override def ap[A, B](ff: G[(A) => B])(fa: G[A]): G[B] =
+    trans(scalazApplicative.ap(transReverse(fa))(transReverse(ff)))
 
-  override def pure[A](x: A): F0[A] =
+  override def pure[A](x: A): G[A] =
     trans(scalazApplicative.point(x))
 
 }
 
 trait ApplicativeConverter {
 
-  implicit def scalazToCatsApplicative[F[_], F0[_]](implicit inner: scalaz.Applicative[F], t: ReversableNatTrans[F, F0]): cats.Applicative[F0] =
-    new CatsApplicative[F, F0] with cats.Applicative[F0] {
-      override protected implicit val trans: ReversableNatTrans[F, F0] = t
+  implicit def scalazToCatsApplicative[F[_], G[_], G0[_], F0[_]](implicit inner: scalaz.Applicative[F], t: ReversableNatTrans[F, G, G0, F0]): cats.Applicative[G] =
+    new CatsApplicative[F, G, G0, F0] with cats.Applicative[G] {
+      override protected implicit val trans: ReversableNatTrans[F, G, G0, F0] = t
       override protected implicit val scalazApplicative: scalaz.Applicative[F] = inner
 
-      override def imap[A, B](fa: F0[A])(f: (A) => B)(fi: (B) => A): F0[B] =
+      override def imap[A, B](fa: G[A])(f: (A) => B)(fi: (B) => A): G[B] =
         CatsInvariantFunctor.imap(fa)(f, fi)(scalazInvariantFunctor, trans)
     }
 
@@ -60,31 +60,31 @@ trait ApplicativeConverter {
 
 object ApplicativeConverter extends ApplicativeConverter
 
-trait CatsArrow[F[_, _], F0[_, _]] {
-  self: cats.arrow.Arrow[F0] =>
+trait CatsArrow[F[_, _], G[_, _], G0[_, _], F0[_, _]] {
+  self: cats.arrow.Arrow[G] =>
 
-  protected implicit val trans: ReversableBiNatTrans[F, F0]
+  protected implicit val trans: ReversableBiNatTrans[F, G, G0, F0]
+  protected implicit val transReverse: ReversableBiNatTrans[G, F, F0, G0] = ReversableBiNatTrans.reverse(trans)
   protected implicit val scalazArrow: scalaz.Arrow[F]
 
-  override def lift[A, B](f: (A) => B): F0[A, B] =
+  override def lift[A, B](f: (A) => B): G[A, B] =
     trans(scalazArrow.arr(f))
 
+  override def first[A, B, C](fa: G[A, B]): G[(A, C), (B, C)] =
+    trans(scalazArrow.first(transReverse(fa)))
 
-  override def first[A, B, C](fa: F0[A, B]): F0[(A, C), (B, C)] =
-    trans(scalazArrow.first(trans.reverse(fa)))
-
-  override def id[A]: F0[A, A] =
+  override def id[A]: G[A, A] =
     trans(scalazArrow.id[A])
 
-  override def compose[A, B, C](f: F0[B, C], g: F0[A, B]): F0[A, C] =
-    trans(scalazArrow.compose(trans.reverse(f), trans.reverse(g)))
+  override def compose[A, B, C](f: G[B, C], g: G[A, B]): G[A, C] =
+    trans(scalazArrow.compose(transReverse(f), transReverse(g)))
 }
 
 trait ArrowConverter {
 
-  implicit def scalazToCatsArrow[F[_, _], F0[_, _]](implicit inner: scalaz.Arrow[F], t: ReversableBiNatTrans[F, F0]): cats.arrow.Arrow[F0] =
-    new CatsArrow[F, F0] with cats.arrow.Arrow[F0] {
-      override protected implicit val trans: ReversableBiNatTrans[F, F0] = t
+  implicit def scalazToCatsArrow[F[_, _], G[_, _], G0[_, _], F0[_, _]](implicit inner: scalaz.Arrow[F], t: ReversableBiNatTrans[F, G, G0, F0]): cats.arrow.Arrow[G] =
+    new CatsArrow[F, G, G0, F0] with cats.arrow.Arrow[G] {
+      override protected implicit val trans: ReversableBiNatTrans[F, G, G0, F0] = t
       override protected implicit val scalazArrow: scalaz.Arrow[F] = inner
     }
 
@@ -92,25 +92,25 @@ trait ArrowConverter {
 
 object ArrowConverter extends ArrowConverter
 
-trait CatsApply[F[_], F0[_]] extends CatsFunctor[F, F0] {
-  self: cats.Apply[F0] =>
+trait CatsApply[F[_], G[_], G0[_], F0[_]] extends CatsFunctor[F, G, G0, F0] {
+  self: cats.Apply[G] =>
 
   protected implicit val scalazApply: scalaz.Apply[F]
   override protected implicit val scalazFunctor: scalaz.Functor[F] = scalazApply
 
-  override def ap[A, B](ff: F0[(A) => B])(fa: F0[A]): F0[B] =
-    trans(scalazApply.ap(trans.reverse(fa))(trans.reverse(ff)))
+  override def ap[A, B](ff: G[(A) => B])(fa: G[A]): G[B] =
+    trans(scalazApply.ap(transReverse(fa))(transReverse(ff)))
 
 }
 
 trait ApplyConverter {
 
-  implicit def scalazToCatsApply[F[_], F0[_]](implicit inner: scalaz.Apply[F], t: ReversableNatTrans[F, F0]): cats.Apply[F0] =
-    new CatsApply[F, F0] with cats.Apply[F0] {
-      override protected implicit val trans: ReversableNatTrans[F, F0] = t
+  implicit def scalazToCatsApply[F[_], G[_], G0[_], F0[_]](implicit inner: scalaz.Apply[F], t: ReversableNatTrans[F, G, G0, F0]): cats.Apply[G] =
+    new CatsApply[F, G, G0, F0] with cats.Apply[G] {
+      override protected implicit val trans: ReversableNatTrans[F, G, G0, F0] = t
       override protected implicit val scalazApply: scalaz.Apply[F] = inner
 
-      override def imap[A, B](fa: F0[A])(f: (A) => B)(fi: (B) => A): F0[B] =
+      override def imap[A, B](fa: G[A])(f: (A) => B)(fi: (B) => A): G[B] =
         CatsInvariantFunctor.imap(fa)(f, fi)(scalazInvariantFunctor, trans)
     }
 
@@ -118,19 +118,19 @@ trait ApplyConverter {
 
 object ApplyConverter extends ApplyConverter
 
-trait CatsBifoldable[F[_, _], F0[_, _]] {
-  self: cats.Bifoldable[F0] =>
+trait CatsBifoldable[F[_, _], G[_, _]] {
+  self: cats.Bifoldable[G] =>
 
   import cats.Eval
 
   protected implicit val scalazBifoldable: scalaz.Bifoldable[F]
-  protected implicit val trans: BiNaturalTransformation[F0, F]
+  protected implicit val trans: BiNaturalTransformation[G, F]
 
-  override def bifoldLeft[A, B, C](fab: F0[A, B], c: C)(f: (C, A) => C, g: (C, B) => C): C =
+  override def bifoldLeft[A, B, C](fab: G[A, B], c: C)(f: (C, A) => C, g: (C, B) => C): C =
     scalazBifoldable.bifoldLeft(trans(fab), c)(f)(g)
 
   override def bifoldRight[A, B, C](
-    fab: F0[A, B],
+    fab: G[A, B],
     c: Eval[C]
   )(f: (A, Eval[C]) => Eval[C],
     g: (B, Eval[C]) => Eval[C]
@@ -149,61 +149,62 @@ trait CatsBifoldable[F[_, _], F0[_, _]] {
 
 trait BifoldableConverter {
 
-  implicit def scalazToCatsBifoldable[F[_, _], F0[_, _]](implicit inner: scalaz.Bifoldable[F], t: BiNaturalTransformation[F0, F]): cats.Bifoldable[F0] =
-    new CatsBifoldable[F, F0] with cats.Bifoldable[F0] {
+  implicit def scalazToCatsBifoldable[F[_, _], G[_, _]](implicit inner: scalaz.Bifoldable[F], t: BiNaturalTransformation[G, F]): cats.Bifoldable[G] =
+    new CatsBifoldable[F, G] with cats.Bifoldable[G] {
       override protected implicit val scalazBifoldable: scalaz.Bifoldable[F] = inner
-      override protected implicit val trans: BiNaturalTransformation[F0, F] = t
+      override protected implicit val trans: BiNaturalTransformation[G, F] = t
     }
 
 }
 
 object BifoldableConverter extends BifoldableConverter
 
-trait CatsBifunctor[F[_, _], F0[_, _]] {
-  self: cats.functor.Bifunctor[F0] =>
+trait CatsBifunctor[F[_, _], G[_, _], G0[_, _], F0[_, _]] {
+  self: cats.functor.Bifunctor[G] =>
 
   protected implicit val scalazBifunctor: scalaz.Bifunctor[F]
-  protected implicit val trans: ReversableBiNatTrans[F, F0]
+  protected implicit val trans: ReversableBiNatTrans[F, G, G0, F0]
+  protected implicit val transReverse: ReversableBiNatTrans[G, F, F0, G0] = ReversableBiNatTrans.reverse(trans)
 
-  override def bimap[A, B, C, D](fab: F0[A, B])(f: (A) => C, g: (B) => D): F0[C, D] =
-    trans(scalazBifunctor.bimap(trans.reverse(fab))(f, g))
+  override def bimap[A, B, C, D](fab: G[A, B])(f: (A) => C, g: (B) => D): G[C, D] =
+    trans(scalazBifunctor.bimap(transReverse(fab))(f, g))
 
 }
 
 trait BifunctorConverter {
 
-  implicit def scalazToCatsBifunctor[F[_, _], F0[_, _]](implicit inner: scalaz.Bifunctor[F], t: ReversableBiNatTrans[F, F0]): cats.functor.Bifunctor[F0] =
-    new CatsBifunctor[F, F0] with cats.functor.Bifunctor[F0] {
+  implicit def scalazToCatsBifunctor[F[_, _], G[_, _], G0[_, _], F0[_, _]](implicit inner: scalaz.Bifunctor[F], t: ReversableBiNatTrans[F, G, G0, F0]): cats.functor.Bifunctor[G] =
+    new CatsBifunctor[F, G, G0, F0] with cats.functor.Bifunctor[G] {
       override protected implicit val scalazBifunctor: scalaz.Bifunctor[F] = inner
-      override protected implicit val trans: ReversableBiNatTrans[F, F0] = t
+      override protected implicit val trans: ReversableBiNatTrans[F, G, G0, F0] = t
     }
 
 }
 
 object BifunctorConverter extends BifunctorConverter
 
-trait CatsBind[F[_], F0[_]] extends CatsApply[F, F0] {
-  self: cats.FlatMap[F0] =>
+trait CatsBind[F[_], G[_], G0[_], F0[_]] extends CatsApply[F, G, G0, F0] {
+  self: cats.FlatMap[G] =>
 
   protected implicit val scalazBindRec: scalaz.BindRec[F]
   override protected implicit val scalazApply: scalaz.Apply[F] = scalazBindRec
 
-  override def flatMap[A, B](fa: F0[A])(f: (A) => F0[B]): F0[B] =
-    trans(scalazBindRec.bind(trans.reverse(fa))(a => trans.reverse(f(a))))
+  override def flatMap[A, B](fa: G[A])(f: (A) => G[B]): G[B] =
+    trans(scalazBindRec.bind(transReverse(fa))(a => transReverse(f(a))))
 
-  override def tailRecM[A, B](a: A)(f: (A) => F0[Either[A, B]]): F0[B] =
-    trans(scalazBindRec.tailrecM((a: A) => scalazBindRec.map(trans.reverse(f(a)))(scalaz.Disjunction.fromEither))(a))
+  override def tailRecM[A, B](a: A)(f: (A) => G[Either[A, B]]): G[B] =
+    trans(scalazBindRec.tailrecM((a: A) => scalazBindRec.map(transReverse(f(a)))(scalaz.Disjunction.fromEither))(a))
 
 }
 
 trait BindConverter {
 
-  implicit def scalazToCatsFlatMap[F[_], F0[_]](implicit inner: scalaz.BindRec[F], t: ReversableNatTrans[F, F0]): cats.FlatMap[F0] =
-    new CatsBind[F, F0] with cats.FlatMap[F0] {
-      override protected implicit val trans: ReversableNatTrans[F, F0] = t
+  implicit def scalazToCatsFlatMap[F[_], G[_], G0[_], F0[_]](implicit inner: scalaz.BindRec[F], t: ReversableNatTrans[F, G, G0, F0]): cats.FlatMap[G] =
+    new CatsBind[F, G, G0, F0] with cats.FlatMap[G] {
+      override protected implicit val trans: ReversableNatTrans[F, G, G0, F0] = t
       override protected implicit val scalazBindRec: scalaz.BindRec[F] = inner
 
-      override def imap[A, B](fa: F0[A])(f: (A) => B)(fi: (B) => A): F0[B] =
+      override def imap[A, B](fa: G[A])(f: (A) => B)(fi: (B) => A): G[B] =
         CatsInvariantFunctor.imap(fa)(f, fi)(scalazInvariantFunctor, trans)
     }
 
@@ -211,56 +212,58 @@ trait BindConverter {
 
 object BindConverter extends BindConverter
 
-trait CatsCategory[F[_, _], F0[_, _]] {
-  self: cats.arrow.Category[F0] =>
+trait CatsCategory[F[_, _], G[_, _], G0[_, _], F0[_, _]] {
+  self: cats.arrow.Category[G] =>
 
   protected implicit val scalazCategory: scalaz.Category[F]
-  protected implicit val trans: ReversableBiNatTrans[F, F0]
+  protected implicit val trans: ReversableBiNatTrans[F, G, G0, F0]
+  protected implicit val transReverse: ReversableBiNatTrans[G, F, F0, G0] = ReversableBiNatTrans.reverse(trans)
 
-  override def id[A]: F0[A, A] =
+  override def id[A]: G[A, A] =
     trans(scalazCategory.id[A])
 
-  override def compose[A, B, C](f: F0[B, C], g: F0[A, B]): F0[A, C] =
-    trans(scalazCategory.compose(trans.reverse(f), trans.reverse(g)))
+  override def compose[A, B, C](f: G[B, C], g: G[A, B]): G[A, C] =
+    trans(scalazCategory.compose(transReverse(f), transReverse(g)))
 
 }
 
 trait CategoryConverter {
 
-  implicit def scalazToCatsCategory[F[_, _], F0[_, _]](implicit inner: scalaz.Category[F], t: ReversableBiNatTrans[F, F0]): cats.arrow.Category[F0] =
-    new CatsCategory[F, F0] with cats.arrow.Category[F0] {
+  implicit def scalazToCatsCategory[F[_, _], G[_, _], G0[_, _], F0[_, _]](implicit inner: scalaz.Category[F], t: ReversableBiNatTrans[F, G, G0, F0]): cats.arrow.Category[G] =
+    new CatsCategory[F, G, G0, F0] with cats.arrow.Category[G] {
       override protected implicit val scalazCategory: scalaz.Category[F] = inner
-      override protected implicit val trans: ReversableBiNatTrans[F, F0] = t
+      override protected implicit val trans: ReversableBiNatTrans[F, G, G0, F0] = t
     }
 
-  implicit def scalazToCatsCategoryValue[F[_, _], F0[_, _]](inner: scalaz.Category[F])(implicit t: ReversableBiNatTrans[F, F0]): cats.arrow.Category[F0] =
-    scalazToCatsCategory[F, F0](inner, t)
+  implicit def scalazToCatsCategoryValue[F[_, _], G[_, _], G0[_, _], F0[_, _]](inner: scalaz.Category[F])(implicit t: ReversableBiNatTrans[F, G, G0, F0]): cats.arrow.Category[G] =
+    scalazToCatsCategory[F, G, G0, F0](inner, t)
 
 }
 
 object CategoryConverter extends CategoryConverter
 
-trait CatsChoice[F[_, _], F0[_, _]] {
-  self: cats.arrow.Choice[F0] =>
+trait CatsChoice[F[_, _], G[_, _], G0[_, _], F0[_, _]] {
+  self: cats.arrow.Choice[G] =>
 
-  protected implicit val trans: ReversableBiNatTrans[F, F0]
+  protected implicit val trans: ReversableBiNatTrans[F, G, G0, F0]
+  protected implicit val transReverse: ReversableBiNatTrans[G, F, F0, G0] = ReversableBiNatTrans.reverse(trans)
   protected implicit val scalazChoice: scalaz.Choice[F]
 
-  override def choice[A, B, C](f: F0[A, C], g: F0[B, C]): F0[Either[A, B], C] =
+  override def choice[A, B, C](f: G[A, C], g: G[B, C]): G[Either[A, B], C] =
     ???
 
-  override def id[A]: F0[A, A] =
+  override def id[A]: G[A, A] =
     trans(scalazChoice.id[A])
 
-  override def compose[A, B, C](f: F0[B, C], g: F0[A, B]): F0[A, C] =
-    trans(scalazChoice.compose(trans.reverse(f), trans.reverse(g)))
+  override def compose[A, B, C](f: G[B, C], g: G[A, B]): G[A, C] =
+    trans(scalazChoice.compose(transReverse(f), transReverse(g)))
 }
 
 trait ChoiceConverter {
 
-  implicit def scalazToCatsChoice[F[_, _], F0[_, _]](implicit inner: scalaz.Choice[F], t: ReversableBiNatTrans[F, F0]): cats.arrow.Choice[F0] =
-    new CatsChoice[F, F0] with cats.arrow.Choice[F0] {
-      override protected implicit val trans: ReversableBiNatTrans[F, F0] = t
+  implicit def scalazToCatsChoice[F[_, _], G[_, _], G0[_, _], F0[_, _]](implicit inner: scalaz.Choice[F], t: ReversableBiNatTrans[F, G, G0, F0]): cats.arrow.Choice[G] =
+    new CatsChoice[F, G, G0, F0] with cats.arrow.Choice[G] {
+      override protected implicit val trans: ReversableBiNatTrans[F, G, G0, F0] = t
       override protected implicit val scalazChoice: scalaz.Choice[F] = inner
     }
 
@@ -268,26 +271,26 @@ trait ChoiceConverter {
 
 object ChoiceConverter extends ChoiceConverter
 
-trait CatsCoflatMap[F[_], F0[_]] extends CatsFunctor[F, F0] {
-  self: cats.CoflatMap[F0] =>
+trait CatsCoflatMap[F[_], G[_], G0[_], F0[_]] extends CatsFunctor[F, G, G0, F0] {
+  self: cats.CoflatMap[G] =>
 
   protected implicit val scalazCobind: scalaz.Cobind[F]
   override protected implicit val scalazInvariantFunctor: scalaz.InvariantFunctor[F] = scalazCobind
   override protected implicit val scalazFunctor: scalaz.Functor[F] = scalazCobind
 
-  override def coflatMap[A, B](fa: F0[A])(f: (F0[A]) => B): F0[B] =
-    trans(scalazCobind.cobind(trans.reverse(fa))((a: F[A]) => f(trans(a))))
+  override def coflatMap[A, B](fa: G[A])(f: (G[A]) => B): G[B] =
+    trans(scalazCobind.cobind(transReverse(fa))((a: F[A]) => f(trans(a))))
 
 }
 
 trait CoBindConverter {
 
-  implicit def scalazToCatsCoFlatMap[F[_], F0[_]](implicit inner: scalaz.Cobind[F], t: ReversableNatTrans[F, F0]): cats.CoflatMap[F0] =
-    new CatsCoflatMap[F, F0] with cats.CoflatMap[F0] {
-      override protected implicit val trans: ReversableNatTrans[F, F0] = t
+  implicit def scalazToCatsCoFlatMap[F[_], G[_], G0[_], F0[_]](implicit inner: scalaz.Cobind[F], t: ReversableNatTrans[F, G, G0, F0]): cats.CoflatMap[G] =
+    new CatsCoflatMap[F, G, G0, F0] with cats.CoflatMap[G] {
+      override protected implicit val trans: ReversableNatTrans[F, G, G0, F0] = t
       override protected implicit val scalazCobind: scalaz.Cobind[F] = inner
 
-      override def imap[A, B](fa: F0[A])(f: (A) => B)(fi: (B) => A): F0[B] =
+      override def imap[A, B](fa: G[A])(f: (A) => B)(fi: (B) => A): G[B] =
         CatsInvariantFunctor.imap(fa)(f, fi)(scalazInvariantFunctor, trans)
     }
 
@@ -295,25 +298,25 @@ trait CoBindConverter {
 
 object CoBindConverter extends CoBindConverter
 
-trait CatsComonad[F[_], F0[_]] extends CatsCoflatMap[F, F0] {
-  self: cats.Comonad[F0] =>
+trait CatsComonad[F[_], G[_], G0[_], F0[_]] extends CatsCoflatMap[F, G, G0, F0] {
+  self: cats.Comonad[G] =>
 
   protected implicit val scalazComonad: scalaz.Comonad[F]
   override protected implicit val scalazCobind: scalaz.Cobind[F] = scalazComonad
 
-  override def extract[A](x: F0[A]): A =
-    scalazComonad.copoint(trans.reverse(x))
+  override def extract[A](x: G[A]): A =
+    scalazComonad.copoint(transReverse(x))
 
 }
 
 trait ComonadConverter {
 
-  implicit def scalazToCatsComonad[F[_], F0[_]](implicit inner: scalaz.Comonad[F], t: ReversableNatTrans[F, F0]): cats.Comonad[F0] =
-    new CatsComonad[F, F0] with cats.Comonad[F0] {
-      override protected implicit val trans: ReversableNatTrans[F, F0] = t
+  implicit def scalazToCatsComonad[F[_], G[_], G0[_], F0[_]](implicit inner: scalaz.Comonad[F], t: ReversableNatTrans[F, G, G0, F0]): cats.Comonad[G] =
+    new CatsComonad[F, G, G0, F0] with cats.Comonad[G] {
+      override protected implicit val trans: ReversableNatTrans[F, G, G0, F0] = t
       override protected implicit val scalazComonad: scalaz.Comonad[F] = inner
 
-      override def imap[A, B](fa: F0[A])(f: (A) => B)(fi: (B) => A): F0[B] =
+      override def imap[A, B](fa: G[A])(f: (A) => B)(fi: (B) => A): G[B] =
         CatsInvariantFunctor.imap(fa)(f, fi)(scalazInvariantFunctor, trans)
     }
 
@@ -321,22 +324,23 @@ trait ComonadConverter {
 
 object ComonadConverter extends ComonadConverter
 
-trait CatsCompose[F[_, _], F0[_, _]] {
-  self: cats.arrow.Compose[F0] =>
+trait CatsCompose[F[_, _], G[_, _], G0[_, _], F0[_, _]] {
+  self: cats.arrow.Compose[G] =>
 
-  protected implicit val trans: ReversableBiNatTrans[F, F0]
+  protected implicit val trans: ReversableBiNatTrans[F, G, G0, F0]
+  protected implicit val transReverse: ReversableBiNatTrans[G, F, F0, G0] = ReversableBiNatTrans.reverse(trans)
   protected implicit val scalazCompose: scalaz.Compose[F]
 
-  override def compose[A, B, C](f: F0[B, C], g: F0[A, B]): F0[A, C] =
-    trans(scalazCompose.compose(trans.reverse(f), trans.reverse(g)))
+  override def compose[A, B, C](f: G[B, C], g: G[A, B]): G[A, C] =
+    trans(scalazCompose.compose(transReverse(f), transReverse(g)))
 
 }
 
 trait ComposeConverter {
 
-  implicit def scalazToCatsCompose[F[_, _], F0[_, _]](implicit inner: scalaz.Compose[F], t: ReversableBiNatTrans[F, F0]): cats.arrow.Compose[F0] =
-    new CatsCompose[F, F0] with cats.arrow.Compose[F0] {
-      override protected implicit val trans: ReversableBiNatTrans[F, F0] = t
+  implicit def scalazToCatsCompose[F[_, _], G[_, _], G0[_, _], F0[_, _]](implicit inner: scalaz.Compose[F], t: ReversableBiNatTrans[F, G, G0, F0]): cats.arrow.Compose[G] =
+    new CatsCompose[F, G, G0, F0] with cats.arrow.Compose[G] {
+      override protected implicit val trans: ReversableBiNatTrans[F, G, G0, F0] = t
       override protected implicit val scalazCompose: scalaz.Compose[F] = inner
     }
 
@@ -344,30 +348,31 @@ trait ComposeConverter {
 
 object ComposeConverter extends ComposeConverter
 
-trait CatsContravariant[F[_], F0[_]] {
-  self: cats.functor.Contravariant[F0] =>
+trait CatsContravariant[F[_], G[_], G0[_], F0[_]] {
+  self: cats.functor.Contravariant[G] =>
 
   protected implicit val scalazContravariant: scalaz.Contravariant[F]
-  protected implicit val trans: ReversableNatTrans[F, F0]
+  protected implicit val trans: ReversableNatTrans[F, G, G0, F0]
+  protected implicit val transReverse: ReversableNatTrans[G, F, F0, G0] = ReversableNatTrans.reverse(trans)
 
-  override def contramap[A, B](fa: F0[A])(f: (B) => A): F0[B] =
-    trans(scalazContravariant.contramap(trans.reverse(fa))(f))
+  override def contramap[A, B](fa: G[A])(f: (B) => A): G[B] =
+    trans(scalazContravariant.contramap(transReverse(fa))(f))
 
 }
 
 trait ContravariantConverter {
 
-  implicit def scalazToCatsContravariant[F[_], F0[_]](implicit inner: scalaz.Contravariant[F], t: ReversableNatTrans[F, F0]): cats.functor.Contravariant[F0] =
-    new CatsContravariant[F, F0] with cats.functor.Contravariant[F0] {
+  implicit def scalazToCatsContravariant[F[_], G[_], G0[_], F0[_]](implicit inner: scalaz.Contravariant[F], t: ReversableNatTrans[F, G, G0, F0]): cats.functor.Contravariant[G] =
+    new CatsContravariant[F, G, G0, F0] with cats.functor.Contravariant[G] {
       override protected implicit val scalazContravariant: scalaz.Contravariant[F] = inner
-      override protected implicit val trans: ReversableNatTrans[F, F0] = t
+      override protected implicit val trans: ReversableNatTrans[F, G, G0, F0] = t
     }
 
 }
 
 object ContravariantConverter extends ContravariantConverter
 
-trait CatsEq[F, F0] {
+trait CatsEq[F, G, G0, F0] {
   self: cats.Eq[F0] =>
 
   protected implicit val scalazEqual: scalaz.Equal[F]
@@ -380,8 +385,8 @@ trait CatsEq[F, F0] {
 
 trait EqualConverter {
 
-  implicit def catsToScalazEqual[F, F0](implicit inner: scalaz.Equal[F], toF0: F => F0, toF: F0 => F): cats.Eq[F0] =
-    new CatsEq[F, F0] with cats.Eq[F0] {
+  implicit def catsToScalazEqual[F, G, G0, F0](implicit inner: scalaz.Equal[F], toF0: F => F0, toF: F0 => F): cats.Eq[F0] =
+    new CatsEq[F, G, G0, F0] with cats.Eq[F0] {
       override protected implicit val scalazEqual: scalaz.Equal[F] = inner
 
       override protected implicit def f0(f: F): F0 = toF0(f)
@@ -393,108 +398,109 @@ trait EqualConverter {
 
 object EqualConverter extends EqualConverter
 
-trait CatsFoldable[F[_], F0[_]] {
-  self: cats.Foldable[F0] =>
+trait CatsFoldable[F[_], G[_], G0[_], F0[_]] {
+  self: cats.Foldable[G] =>
 
   import cats.Eval
 
-  protected implicit val revTrans: NaturalTransformation[F0, F]
+  protected implicit val transReverse: NaturalTransformation[G, F]
   protected implicit val scalazFoldable: scalaz.Foldable[F]
 
-  override def foldLeft[A, B](fa: F0[A], b: B)(f: (B, A) => B): B =
-    scalazFoldable.foldLeft(revTrans(fa), b)(f)
+  override def foldLeft[A, B](fa: G[A], b: B)(f: (B, A) => B): B =
+    scalazFoldable.foldLeft(transReverse(fa), b)(f)
 
-  override def foldRight[A, B](fa: F0[A], lb: Eval[B])(f: (A, Eval[B]) => Eval[B]): Eval[B] = {
+  override def foldRight[A, B](fa: G[A], lb: Eval[B])(f: (A, Eval[B]) => Eval[B]): Eval[B] = {
     def catsF(a: A, b: => Eval[B]): Eval[B] =
       f(a, b)
 
-    scalazFoldable.foldRight[A, Eval[B]](revTrans(fa), lb)(catsF)
+    scalazFoldable.foldRight[A, Eval[B]](transReverse(fa), lb)(catsF)
   }
 }
 
 trait FoldableConverter {
 
-  implicit def scalazToCatsFoldable[F[_], F0[_]](implicit inner: scalaz.Foldable[F], t: NaturalTransformation[F0, F]): cats.Foldable[F0] =
-    new CatsFoldable[F, F0] with cats.Foldable[F0] {
-      override protected implicit val revTrans: NaturalTransformation[F0, F] = t
+  implicit def scalazToCatsFoldable[F[_], G[_], G0[_], F0[_]](implicit inner: scalaz.Foldable[F], t: NaturalTransformation[G, F]): cats.Foldable[G] =
+    new CatsFoldable[F, G, G0, F0] with cats.Foldable[G] {
+      override protected implicit val transReverse: NaturalTransformation[G, F] = t
       override protected implicit val scalazFoldable: scalaz.Foldable[F] = inner
     }
 
-  implicit def scalazToCatsFoldableId[F[_]](implicit inner: scalaz.Foldable[F]): cats.Foldable[F] = {
-    implicit val t = NaturalTransformation.refl[F]
-    scalazToCatsFoldable[F, F]
-  }
+//  implicit def scalazToCatsFoldableId[F[_]](implicit inner: scalaz.Foldable[F]): cats.Foldable[F] = {
+//    implicit val t = NaturalTransformation.refl[F]
+//    scalazToCatsFoldable[F, F, F, F]
+//  }
 
 }
 
 object FoldableConverter extends FoldableConverter
 
-trait CatsFunctor[F[_], F0[_]] extends CatsInvariantFunctor[F, F0] {
-  self: cats.Functor[F0] =>
+trait CatsFunctor[F[_], G[_], G0[_], F0[_]] extends CatsInvariantFunctor[F, G, G0, F0] {
+  self: cats.Functor[G] =>
 
   protected implicit val scalazFunctor: scalaz.Functor[F]
   override protected implicit val scalazInvariantFunctor: scalaz.InvariantFunctor[F] = scalazFunctor
 
-  override def map[A, B](fa: F0[A])(f: (A) => B): F0[B] =
-    trans(scalazFunctor.map(trans.reverse(fa))(f))
+  override def map[A, B](fa: G[A])(f: (A) => B): G[B] =
+    trans(scalazFunctor.map(transReverse(fa))(f))
 
 }
 
 trait FunctorConverter {
 
-  implicit def scalazToCatsFunctor[F[_], F0[_]](implicit inner: scalaz.Functor[F], t: ReversableNatTrans[F, F0]): cats.Functor[F0] =
-    new CatsFunctor[F, F0] with cats.Functor[F0] {
-      override protected implicit val trans: ReversableNatTrans[F, F0] = t
+  implicit def scalazToCatsFunctor[F[_], G[_], G0[_], F0[_]](implicit inner: scalaz.Functor[F], t: ReversableNatTrans[F, G, G0, F0]): cats.Functor[G] =
+    new CatsFunctor[F, G, G0, F0] with cats.Functor[G] {
+      override protected implicit val trans: ReversableNatTrans[F, G, G0, F0] = t
       override protected implicit val scalazFunctor: scalaz.Functor[F] = inner
 
-      override def imap[A, B](fa: F0[A])(f: (A) => B)(fi: (B) => A): F0[B] =
+      override def imap[A, B](fa: G[A])(f: (A) => B)(fi: (B) => A): G[B] =
         CatsInvariantFunctor.imap(fa)(f, fi)(scalazInvariantFunctor, trans)
     }
 
 //  implicit def scalazToCatsFunctorId[F[_]](implicit inner: scalaz.Functor[F]): cats.Functor[F] =
 //    scalazToCatsFunctor[F, F]
 
-  implicit def scalazToCatsFunctorValue[F[_], F0[_]](inner: scalaz.Functor[F])(implicit t: ReversableNatTrans[F, F0]): cats.Functor[F0] =
-    scalazToCatsFunctor[F, F0](inner, t)
+  implicit def scalazToCatsFunctorValue[F[_], G[_], G0[_], F0[_]](inner: scalaz.Functor[F])(implicit t: ReversableNatTrans[F, G, G0, F0]): cats.Functor[G] =
+    scalazToCatsFunctor[F, G, G0, F0](inner, t)
 
 }
 
 object FunctorConverter extends FunctorConverter
 
-trait CatsInvariantFunctor[F[_], F0[_]] {
-  self: cats.functor.Invariant[F0] =>
+trait CatsInvariantFunctor[F[_], G[_], G0[_], F0[_]] {
+  self: cats.functor.Invariant[G] =>
 
-  protected implicit val trans: ReversableNatTrans[F, F0]
+  protected implicit val trans: ReversableNatTrans[F, G, G0, F0]
+  protected implicit val transReverse: ReversableNatTrans[G, F, F0, G0] = ReversableNatTrans.reverse(trans)
   protected implicit val scalazInvariantFunctor: scalaz.InvariantFunctor[F]
 
-  override def imap[A, B](fa: F0[A])(f: (A) => B)(g: (B) => A): F0[B] =
+  override def imap[A, B](fa: G[A])(f: (A) => B)(g: (B) => A): G[B] =
     CatsInvariantFunctor.imap(fa)(f, g)
 }
 
 object CatsInvariantFunctor {
-  def imap[F[_], F0[_], A, B](fa: F0[A])(f: (A) => B, g: (B) => A)(implicit inner: scalaz.InvariantFunctor[F], t: ReversableNatTrans[F, F0]): F0[B] =
-    t(inner.xmap(t.reverse(fa), f, g))
+  def imap[F[_], G[_], G0[_], F0[_], A, B](fa: G[A])(f: (A) => B, g: (B) => A)(implicit inner: scalaz.InvariantFunctor[F], t: ReversableNatTrans[F, G, G0, F0]): G[B] =
+    t(inner.xmap(ReversableNatTrans.reverse(t)(fa), f, g))
 }
 
 trait InvariantFunctorConverter {
 
-  implicit def scalazToCatsInvariantInstance[F[_], F0[_]](implicit inner: scalaz.InvariantFunctor[F], t: ReversableNatTrans[F, F0]): cats.functor.Invariant[F0] =
-    new CatsInvariantFunctor[F, F0] with cats.functor.Invariant[F0] {
-      override protected implicit val trans: ReversableNatTrans[F, F0] = t
+  implicit def scalazToCatsInvariantInstance[F[_], G[_], G0[_], F0[_]](implicit inner: scalaz.InvariantFunctor[F], t: ReversableNatTrans[F, G, G0, F0]): cats.functor.Invariant[G] =
+    new CatsInvariantFunctor[F, G, G0, F0] with cats.functor.Invariant[G] {
+      override protected implicit val trans: ReversableNatTrans[F, G, G0, F0] = t
       override protected implicit val scalazInvariantFunctor: scalaz.InvariantFunctor[F] = inner
     }
 
-  implicit def scalazToCatsInvariantValue[F[_], F0[_]](inner: scalaz.InvariantFunctor[F])(implicit t: ReversableNatTrans[F, F0]): cats.functor.Invariant[F0] =
-    scalazToCatsInvariantInstance[F, F0](inner, t)
+  implicit def scalazToCatsInvariantValue[F[_], G[_], G0[_], F0[_]](inner: scalaz.InvariantFunctor[F])(implicit t: ReversableNatTrans[F, G, G0, F0]): cats.functor.Invariant[G] =
+    scalazToCatsInvariantInstance[F, G, G0, F0](inner, t)
 
 }
 
 object InvariantFunctorConverter extends InvariantFunctorConverter
 
-trait CatsMonad[F[_], F0[_]]
-  extends CatsBind[F, F0]
-    with CatsApplicative[F, F0] {
-  self: cats.Monad[F0] =>
+trait CatsMonad[F[_], G[_], G0[_], F0[_]]
+  extends CatsBind[F, G, G0, F0]
+    with CatsApplicative[F, G, G0, F0] {
+  self: cats.Monad[G] =>
 
   protected implicit val scalazMonad: scalaz.Monad[F]
   override protected implicit val scalazApplicative: scalaz.Applicative[F] = scalazMonad
@@ -502,13 +508,13 @@ trait CatsMonad[F[_], F0[_]]
 
 trait MonadConverter {
 
-  implicit def scalazToCatsMonad[F[_], F0[_]](implicit inner: scalaz.Monad[F], inner0: scalaz.BindRec[F], t: ReversableNatTrans[F, F0]): cats.Monad[F0] =
-    new CatsMonad[F, F0] with cats.Monad[F0] {
-      override protected implicit val trans: ReversableNatTrans[F, F0] = t
+  implicit def scalazToCatsMonad[F[_], G[_], G0[_], F0[_]](implicit inner: scalaz.Monad[F], inner0: scalaz.BindRec[F], t: ReversableNatTrans[F, G, G0, F0]): cats.Monad[G] =
+    new CatsMonad[F, G, G0, F0] with cats.Monad[G] {
+      override protected implicit val trans: ReversableNatTrans[F, G, G0, F0] = t
       override protected implicit val scalazBindRec = inner0
       override protected implicit val scalazMonad: scalaz.Monad[F] = inner
 
-      override def imap[A, B](fa: F0[A])(f: (A) => B)(fi: (B) => A): F0[B] =
+      override def imap[A, B](fa: G[A])(f: (A) => B)(fi: (B) => A): G[B] =
         CatsInvariantFunctor.imap(fa)(f, fi)(scalazInvariantFunctor, trans)
     }
 
@@ -516,33 +522,33 @@ trait MonadConverter {
 
 object MonadConverter extends MonadConverter
 
-trait CatsMonadError[F[_], F0[_], E] extends CatsMonad[F, F0] {
-  self: cats.MonadError[F0, E] =>
+trait CatsMonadError[F[_], G[_], G0[_], F0[_], E] extends CatsMonad[F, G, G0, F0] {
+  self: cats.MonadError[G, E] =>
 
   protected implicit val scalazMonadError: scalaz.MonadError[F, E]
   override protected implicit val scalazMonad: scalaz.Monad[F] = scalazMonadError
 
-  override def raiseError[A](e: E): F0[A] =
+  override def raiseError[A](e: E): G[A] =
     trans(scalazMonadError.raiseError(e))
 
-  override def handleErrorWith[A](fa: F0[A])(f: (E) => F0[A]): F0[A] =
-    trans(scalazMonadError.handleError(trans.reverse(fa))(e => trans.reverse(f(e))))
+  override def handleErrorWith[A](fa: G[A])(f: (E) => G[A]): G[A] =
+    trans(scalazMonadError.handleError(transReverse(fa))(e => transReverse(f(e))))
 
-  override def imap[A, B](fa: F0[A])(f: (A) => B)(fi: (B) => A): F0[B] =
+  override def imap[A, B](fa: G[A])(f: (A) => B)(fi: (B) => A): G[B] =
     CatsInvariantFunctor.imap(fa)(f, fi)
 
 }
 
 trait MonadErrorConverter {
 
-  implicit def scalazToCatsMonadError[F[_], F0[_], E](implicit inner: scalaz.MonadError[F, E], inner0: scalaz.BindRec[F], t: ReversableNatTrans[F, F0]): cats.MonadError[F0, E] =
-    new CatsMonadError[F, F0, E] with cats.MonadError[F0, E] {
+  implicit def scalazToCatsMonadError[F[_], G[_], G0[_], F0[_], E](implicit inner: scalaz.MonadError[F, E], inner0: scalaz.BindRec[F], t: ReversableNatTrans[F, G, G0, F0]): cats.MonadError[G, E] =
+    new CatsMonadError[F, G, G0, F0, E] with cats.MonadError[G, E] {
 
-      override protected implicit val trans: ReversableNatTrans[F, F0] = t
+      override protected implicit val trans: ReversableNatTrans[F, G, G0, F0] = t
       override protected implicit val scalazBindRec = inner0
       override protected implicit val scalazMonadError: scalaz.MonadError[F, E] = inner
 
-      override def imap[A, B](fa: F0[A])(f: (A) => B)(fi: (B) => A): F0[B] =
+      override def imap[A, B](fa: G[A])(f: (A) => B)(fi: (B) => A): G[B] =
         CatsInvariantFunctor.imap(fa)(f, fi)(scalazInvariantFunctor, trans)
     }
 
@@ -550,29 +556,29 @@ trait MonadErrorConverter {
 
 object MonadErrorConverter extends MonadErrorConverter
 
-trait CatsMonadReader[F[_], F0[_], S] extends CatsMonad[F, F0] {
-  self: cats.MonadReader[F0, S] =>
+trait CatsMonadReader[F[_], G[_], G0[_], F0[_], S] extends CatsMonad[F, G, G0, F0] {
+  self: cats.MonadReader[G, S] =>
 
   protected implicit val scalazMonadReader: scalaz.MonadReader[F, S]
   override protected implicit val scalazMonad: scalaz.Monad[F] = scalazMonadReader
 
-  override def ask: F0[S] =
+  override def ask: G[S] =
     trans(scalazMonadReader.ask)
 
-  override def local[A](f: (S) => S)(fa: F0[A]): F0[A] =
-    trans(scalazMonadReader.local(f)(trans.reverse(fa)))
+  override def local[A](f: (S) => S)(fa: G[A]): G[A] =
+    trans(scalazMonadReader.local(f)(transReverse(fa)))
 
 }
 
 trait MonadReaderConverter {
 
-  implicit def scalazToCatsMonadReader[F[_], F0[_], S](implicit inner: scalaz.MonadReader[F, S], inner0: scalaz.BindRec[F], t: ReversableNatTrans[F, F0]): cats.MonadReader[F0, S] =
-    new CatsMonadReader[F, F0, S] with cats.MonadReader[F0, S] {
-      override protected implicit val trans: ReversableNatTrans[F, F0] = t
+  implicit def scalazToCatsMonadReader[F[_], G[_], G0[_], F0[_], S](implicit inner: scalaz.MonadReader[F, S], inner0: scalaz.BindRec[F], t: ReversableNatTrans[F, G, G0, F0]): cats.MonadReader[G, S] =
+    new CatsMonadReader[F, G, G0, F0, S] with cats.MonadReader[G, S] {
+      override protected implicit val trans: ReversableNatTrans[F, G, G0, F0] = t
       override protected implicit val scalazMonadReader: scalaz.MonadReader[F, S] = inner
       override protected implicit val scalazBindRec: scalaz.BindRec[F] = inner0
 
-      override def imap[A, B](fa: F0[A])(f: (A) => B)(fi: (B) => A): F0[B] =
+      override def imap[A, B](fa: G[A])(f: (A) => B)(fi: (B) => A): G[B] =
         CatsInvariantFunctor.imap(fa)(f, fi)(inner, trans)
     }
 
@@ -580,30 +586,30 @@ trait MonadReaderConverter {
 
 object MonadReaderConverter extends MonadReaderConverter
 
-trait CatsMonadState[F[_], F0[_], S]
-  extends CatsMonad[F, F0] {
-  self: cats.MonadState[F0, S] =>
+trait CatsMonadState[F[_], G[_], G0[_], F0[_], S]
+  extends CatsMonad[F, G, G0, F0] {
+  self: cats.MonadState[G, S] =>
 
   protected implicit val scalazMonadState: scalaz.MonadState[F, S]
   override protected implicit val scalazMonad: scalaz.Monad[F] = scalazMonadState
 
-  override def get: F0[S] =
+  override def get: G[S] =
     trans(scalazMonadState.get)
 
-  override def set(s: S): F0[Unit] =
+  override def set(s: S): G[Unit] =
     trans(scalazMonadState.put(s))
 
 }
 
 trait MonadStateConverter {
 
-  implicit def scalazToCatsMonadState[F[_], F0[_], S](implicit inner: scalaz.MonadState[F, S], inner0: scalaz.BindRec[F], t: ReversableNatTrans[F, F0]): cats.Monad[F0] =
-    new CatsMonadState[F, F0, S] with cats.MonadState[F0, S] {
-      override protected implicit val trans: ReversableNatTrans[F, F0] = t
+  implicit def scalazToCatsMonadState[F[_], G[_], G0[_], F0[_], S](implicit inner: scalaz.MonadState[F, S], inner0: scalaz.BindRec[F], t: ReversableNatTrans[F, G, G0, F0]): cats.Monad[G] =
+    new CatsMonadState[F, G, G0, F0, S] with cats.MonadState[G, S] {
+      override protected implicit val trans: ReversableNatTrans[F, G, G0, F0] = t
       override protected implicit val scalazMonadState: scalaz.MonadState[F, S] = inner
       override protected implicit val scalazBindRec: scalaz.BindRec[F] = inner0
 
-      override def imap[A, B](fa: F0[A])(f: (A) => B)(fi: (B) => A): F0[B] =
+      override def imap[A, B](fa: G[A])(f: (A) => B)(fi: (B) => A): G[B] =
         CatsInvariantFunctor.imap(fa)(f, fi)(inner, trans)
     }
 
@@ -611,7 +617,7 @@ trait MonadStateConverter {
 
 object MonadStateConverter extends MonadStateConverter
 
-trait CatsMonoid[F, F0] {
+trait CatsMonoid[F, G, G0, F0] {
   self: cats.Monoid[F0] =>
 
   protected implicit val scalazMonoid: scalaz.Monoid[F]
@@ -627,8 +633,8 @@ trait CatsMonoid[F, F0] {
 
 trait MonoidConverter {
 
-  implicit def scalazToCatsMonoid[F, F0](implicit inner: scalaz.Monoid[F], t: F => F0, r: F0 => F): cats.Monoid[F0] =
-    new CatsMonoid[F, F0] with cats.Monoid[F0] {
+  implicit def scalazToCatsMonoid[F, G, G0, F0](implicit inner: scalaz.Monoid[F], t: F => F0, r: F0 => F): cats.Monoid[F0] =
+    new CatsMonoid[F, G, G0, F0] with cats.Monoid[F0] {
       override protected implicit val scalazMonoid: scalaz.Monoid[F] = inner
 
       override protected implicit def trans(f: F): F0 = t(f)
@@ -701,29 +707,28 @@ trait ShowConverter {
 
 object ShowConverter extends ShowConverter
 
-trait CatsTraverse[F[_], F0[_]] extends CatsFunctor[F, F0] with CatsFoldable[F, F0] {
-  self: cats.Traverse[F0] =>
+trait CatsTraverse[F[_], G[_], G0[_], F0[_]] extends CatsFunctor[F, G, G0, F0] with CatsFoldable[F, G, G0, F0] {
+  self: cats.Traverse[G] =>
 
   import harmony.toscalaz.typeclass.ApplicativeConverter._
 
   protected implicit val scalazTraverse: scalaz.Traverse[F]
-  override protected implicit val revTrans: NaturalTransformation[F0, F] = trans.reverse
   override protected implicit val scalazFunctor: scalaz.Functor[F] = scalazTraverse
   override protected implicit val scalazFoldable: scalaz.Foldable[F] = scalazTraverse
 
-  override def traverse[G[_], A, B](fa: F0[A])(f: (A) => G[B])(implicit a: cats.Applicative[G]): G[F0[B]] = {
-    a.ap[F[B], F0[B]](a.pure(trans.apply))(scalazTraverse.traverse(trans.reverse(fa))(f))
+  override def traverse[T[_], A, B](fa: G[A])(f: (A) => T[B])(implicit a: cats.Applicative[T]): T[G[B]] = {
+    a.ap[F[B], G[B]](a.pure(trans.apply))(scalazTraverse.traverse(transReverse(fa))(f))
   }
 }
 
 trait TraverseConverter {
 
-  implicit def scalazToCatsTraverse[F[_], F0[_]](implicit inner: scalaz.Traverse[F], t: ReversableNatTrans[F, F0]): cats.Traverse[F0] =
-    new CatsTraverse[F, F0] with cats.Traverse[F0] {
-      override protected implicit val trans: ReversableNatTrans[F, F0] = t
+  implicit def scalazToCatsTraverse[F[_], G[_], G0[_], F0[_]](implicit inner: scalaz.Traverse[F], t: ReversableNatTrans[F, G, G0, F0]): cats.Traverse[G] =
+    new CatsTraverse[F, G, G0, F0] with cats.Traverse[G] {
+      override protected implicit val trans: ReversableNatTrans[F, G, G0, F0] = t
       override protected implicit val scalazTraverse: scalaz.Traverse[F] = inner
 
-      override def imap[A, B](fa: F0[A])(f: (A) => B)(fi: (B) => A): F0[B] =
+      override def imap[A, B](fa: G[A])(f: (A) => B)(fi: (B) => A): G[B] =
         CatsInvariantFunctor.imap(fa)(f, fi)(scalazInvariantFunctor, trans)
     }
 

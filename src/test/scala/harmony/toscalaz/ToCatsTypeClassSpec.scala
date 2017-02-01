@@ -37,7 +37,7 @@ class ToCatsTypeClassSpec extends FunSuite {
     import harmony.tocats.data.NonEmptyListConverter._
     import harmony.toscalaz.data.NonEmptyListConverter._
 
-    val c: scalaz.InvariantFunctor[scalaz.NonEmptyList] = catsToScalazInvariantFunctorInstance[cats.data.NonEmptyList, scalaz.NonEmptyList](cats.functor.Invariant[cats.data.NonEmptyList], ReversableNatTrans[cats.data.NonEmptyList, scalaz.NonEmptyList])
+    val c: scalaz.InvariantFunctor[scalaz.NonEmptyList] = catsToScalazInvariantFunctorInstance[cats.data.NonEmptyList, scalaz.NonEmptyList, scalaz.NonEmptyList, cats.data.NonEmptyList](cats.functor.Invariant[cats.data.NonEmptyList], ReversableNatTrans[cats.data.NonEmptyList, scalaz.NonEmptyList, scalaz.NonEmptyList, cats.data.NonEmptyList])
 
     assertResult(scalaz.NonEmptyList("1"))(c.xmap[Int, String](scalaz.NonEmptyList(1), _.toString, _.toInt))
   }
