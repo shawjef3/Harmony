@@ -1,6 +1,5 @@
 package harmony.tocats.typeclass
 
-import harmony.{NaturalTransformation, ReversableNatTrans}
 import org.scalatest.FunSuite
 
 class ToCatsTypeClassSpec extends FunSuite {
@@ -12,8 +11,6 @@ class ToCatsTypeClassSpec extends FunSuite {
     val x = scalaz.OneAnd[Vector, Int](0, Vector(1, 2, 3))
 
     val f = scalaz.Functor[scalaz.OneAnd[Vector, ?]]
-
-//    val catsF: cats.Functor[scalaz.OneAnd[Vector, ?]] = scalazToCatsFunctorValue[scalaz.OneAnd[Vector, ?], scalaz.OneAnd[Vector, ?], scalaz.OneAnd[Vector, ?], scalaz.OneAnd[Vector, ?]](f)(ReversableNatTrans[scalaz.OneAnd[Vector, ?], scalaz.OneAnd[Vector, ?], scalaz.OneAnd[Vector, ?], scalaz.OneAnd[Vector, ?]])
 
     val catsF: cats.Functor[scalaz.OneAnd[Vector, ?]] = f
 

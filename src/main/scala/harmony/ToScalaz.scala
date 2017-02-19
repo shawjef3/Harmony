@@ -3,8 +3,7 @@ package harmony
 import harmony.toscalaz._
 
 trait ToScalaz
-  extends Data
-  with TypeClass
+  extends TypeClass
 
 object ToScalaz
   extends ToScalaz
