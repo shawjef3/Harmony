@@ -16,37 +16,49 @@ We can all live together!
 
 The naming scheme will change if Cats or Scalaz change their binary compatibility guarantees. Cats has no such guarantee.
 
+### Imports
+
 Harmony releases sharing an artifact name and major version should be binary compatible.
 
-### Usage
-
-| domain | codomain | type class | all (only type classes at present) |
+| domain | codomain | type class | data types | both |
 | ------ | -------- | --------- | ---------- | ---- |
-| Cats   | Scalaz   | `import harmony.toscalaz.TypeClasses._` | `import harmony.ToScalaz._` |
-| Scalaz   | Cats   | `import harmony.tocats.TypeClasses._` | `import harmony.ToCats._` |
+| Cats   | Scalaz   | `import harmony.toscalaz.TypeClasses._` | `import harmony.tocats.Data._` | `import harmony.ToScalaz._` |
+| Scalaz   | Cats   | `import harmony.tocats.TypeClasses._` | `import harmony.tocats.Data._` | `import harmony.ToCats._` |
 
 Or, if you just want everyone to get along,
 
 `import harmony.Everyone._`
+
+### Examples
 
 Want a `cats.Functor` for `scalaz.IList`?
 
 ```scala
 import harmony.tocats.typeclass.FunctorConverter._
 
-implicitly[cats.Functor[scalaz.IList]]
+cats.Functor[scalaz.IList]
+```
+
+Want a to use a `scalaz.Writer` in a `cats.data.Writer`?
+
+```scala
+import cats.instances.int._
+import harmony.tocats.data.WriterTConverter._
+
+val tell3 = scalaz.WriterT.tell(3)
+
+val w: cats.data.WriterT[cats.Id, Int, Unit] =
+  for {
+    _ <- cats.data.Writer.tell(2)
+    _ <- tell3
+  } yield ()
+
+w.run // yields (5, ())
 ```
 
 ## Provided conversions
 
 Please see the [Google doc](https://docs.google.com/spreadsheets/d/1GCiEnpMJ88Nck7Bw24ef98KMs33RnWQBH29p-b8N60w).
-
-```scala
-import harmony.Everyone._
-val x = scalaz.NonEmptyList(0, 1, 2, 3)
-
-cats.Functor[scalaz.NonEmptyList].map(x)(_.toString)
-```
 
 ## Something missing?
 
@@ -57,3 +69,4 @@ Or you can open an issue describing the conversions you need and someone might d
 ## Tests
 
 Harmony could use many more tests. As the library gains popularity I will add more.
+

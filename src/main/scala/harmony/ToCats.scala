@@ -3,7 +3,8 @@ package harmony
 import harmony.tocats._
 
 trait ToCats
-  extends TypeClass
+  extends Data
+    with TypeClass
 
 object ToCats
   extends ToCats

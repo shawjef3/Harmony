@@ -1,5 +1,7 @@
 package harmony.toscalaz.typeclass
 
+import cats.Apply
+
 trait ScalazApplicative[F[_]] {
   self: scalaz.Applicative[F] =>
 
@@ -145,37 +147,14 @@ trait BifunctorConverter {
 
 object BifunctorConverter extends BifunctorConverter
 
-trait ScalazBind[F[_]] extends ScalazApply[F] {
-  self: scalaz.Bind[F] =>
+trait ScalazBindRec[F[_]] extends ScalazApply[F] {
+  self: scalaz.BindRec[F] =>
 
   protected implicit def catsFlatMap: cats.FlatMap[F]
-  override protected implicit lazy val catsApply: cats.Apply[F] = catsFlatMap
+  override protected implicit val catsApply: Apply[F] = catsFlatMap
 
   override def bind[A, B](fa: F[A])(f: (A) => F[B]): F[B] =
     catsFlatMap.flatMap(fa)(s => f(s))
-
-}
-
-trait BindConverter {
-
-  implicit def catsToScalazBind[F[_]](implicit inner: cats.FlatMap[F]): scalaz.Bind[F] =
-    new ScalazBindRec[F] with scalaz.BindRec[F] {
-
-      override protected implicit val catsFlatMap: cats.FlatMap[F] = inner
-
-      override def xmap[A, B](ma: F[A], f: (A) => B, g: (B) => A): F[B] =
-        ScalazInvariantFunctor.xmap(ma, f, g)(catsInvariant)
-    }
-
-  implicit def catsToScalazBindValue[F[_]](inner: cats.FlatMap[F]): scalaz.Bind[F] =
-    catsToScalazBind[F](inner)
-
-}
-
-object BindConverter extends BindConverter
-
-trait ScalazBindRec[F[_]] extends ScalazBind[F] {
-  self: scalaz.BindRec[F] =>
 
   override def tailrecM[A, B](f: (A) => F[scalaz.Disjunction[A, B]])(a: A): F[B] =
     catsFlatMap.tailRecM(a)((a: A) => catsFlatMap.map(f(a))(_.toEither))
@@ -183,7 +162,7 @@ trait ScalazBindRec[F[_]] extends ScalazBind[F] {
 
 trait BindRecConverter {
 
-  implicit def catsToScalazBindRec[F[_]](implicit inner: cats.FlatMap[F]): scalaz.Bind[F] =
+  implicit def catsToScalazBindRec[F[_]](implicit inner: cats.FlatMap[F]): scalaz.BindRec[F] =
     new ScalazBindRec[F] with scalaz.BindRec[F] {
 
       override protected implicit val catsFlatMap: cats.FlatMap[F] = inner
@@ -192,12 +171,26 @@ trait BindRecConverter {
         ScalazInvariantFunctor.xmap(ma, f, g)(catsInvariant)
     }
 
-  implicit def catsToScalazBindRecValue[F[_]](inner: cats.FlatMap[F]): scalaz.Bind[F] =
+  implicit def catsToScalazBindRecValue[F[_]](inner: cats.FlatMap[F]): scalaz.BindRec[F] =
     catsToScalazBindRec[F](inner)
 
 }
 
 object BindRecConverter extends BindRecConverter
+
+trait BindConverter {
+
+  import BindRecConverter._
+
+  implicit def catsToScalazBind[F[_]](implicit inner: cats.FlatMap[F]): scalaz.Bind[F] =
+    catsToScalazBindRec[F]
+
+  implicit def catsToScalazBindValue[F[_]](inner: cats.FlatMap[F]): scalaz.Bind[F] =
+    catsToScalazBindRecValue[F](inner)
+
+}
+
+object BindConverter extends BindConverter
 
 trait ScalazCategory[F[_, _]] {
   self: scalaz.Category[F] =>
@@ -497,7 +490,6 @@ trait MonadErrorConverter {
     new ScalazMonadError[F, S]
       with scalaz.MonadError[F, S]
       with scalaz.BindRec[F] {
-
 
       override protected implicit val catsMonadError: cats.MonadError[F, S] = inner
 
