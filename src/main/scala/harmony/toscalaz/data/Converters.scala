@@ -54,10 +54,10 @@ trait EitherConverter {
     }
 
   implicit def scalaLeftToDLeft[A, B](s: scala.Left[A, B]): scalaz.DLeft[A] =
-    scalaz.DLeft(s.value)
+    scalaz.DLeft(s.left.get)
 
-  implicit def scalaRghtTODRight[A, B](s: scala.Right[A, B]): scalaz.DRight[B] =
-    scalaz.DRight(s.value)
+  implicit def scalaRightToDRight[A, B](s: scala.Right[A, B]): scalaz.DRight[B] =
+    scalaz.DRight(s.right.get)
 
   implicit def scalaEitherToDisjunction[A, B](s: scala.Either[A, B]): scalaz.Disjunction[A, B] =
     catsToScalazDisjunctionNaturalTransformation.apply[A, B](s)
