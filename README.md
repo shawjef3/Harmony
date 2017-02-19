@@ -11,8 +11,8 @@ We can all live together!
 
 | cats version | scalaz version | harmony version | dependency |
 | ------------ | -------------- | --------------- | ---------- |
-| 0.8.1        | 7.2.*          | 1.0-M0          | `"me.jeffshaw" %% "harmony_cats0.8.1_scalaz7.2" % "1.0-M0"` |
-| 0.9.0        | 7.2.*          | 1.0-M0          | `"me.jeffshaw" %% "harmony_cats0.9.0_scalaz7.2" % "1.0-M0"` |
+| 0.8.1        | 7.2.*          | 1.0          | `"me.jeffshaw" %% "harmony_cats0.8.1_scalaz7.2" % "1.0"` |
+| 0.9.0        | 7.2.*          | 1.0          | `"me.jeffshaw" %% "harmony_cats0.9.0_scalaz7.2" % "1.0"` |
 
 The naming scheme will change if Cats or Scalaz change their binary compatibility guarantees. Cats has no such guarantee.
 
