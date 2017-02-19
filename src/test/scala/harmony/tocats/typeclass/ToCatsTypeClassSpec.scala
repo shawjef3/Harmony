@@ -4,19 +4,18 @@ import org.scalatest.FunSuite
 
 class ToCatsTypeClassSpec extends FunSuite {
 
-  test("NonEmptyVector example works") {
+  test("NonEmptyList example works") {
     import harmony.tocats.typeclass.FunctorConverter._
-    import scalaz.std.vector._
 
-    val x = scalaz.OneAnd[Vector, Int](0, Vector(1, 2, 3))
+    val x = scalaz.NonEmptyList(0, 1, 2, 3)
 
-    val f = scalaz.Functor[scalaz.OneAnd[Vector, ?]]
+    val f = scalaz.Functor[scalaz.NonEmptyList]
 
-    val catsF: cats.Functor[scalaz.OneAnd[Vector, ?]] = f
+    val catsF: cats.Functor[scalaz.NonEmptyList] = f
 
     val result = catsF.map(x)(_.toString)
 
-    assertResult(scalaz.OneAnd[Vector, String]("0", Vector("1", "2", "3")))(result)
+    assertResult(scalaz.NonEmptyList[String]("0", "1", "2", "3"))(result)
   }
 
 }
