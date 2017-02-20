@@ -39,7 +39,7 @@ import harmony.tocats.typeclass.FunctorConverter._
 cats.Functor[scalaz.IList]
 ```
 
-Want a to use a `scalaz.Writer` in a `cats.data.Writer`?
+Want to use a `scalaz.Writer` in a `cats.data.Writer`?
 
 ```scala
 import cats.instances.int._
