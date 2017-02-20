@@ -34,8 +34,8 @@ object AlternativeConverter extends AlternativeConverter
 trait CatsApplicative[F[_]] extends CatsApply[F] {
   self: cats.Applicative[F] =>
 
-  protected implicit val scalazApplicative: scalaz.Applicative[F]
-  override protected implicit val scalazApply: scalaz.Apply[F] = scalazApplicative
+  protected implicit def scalazApplicative: scalaz.Applicative[F]
+  override protected implicit lazy val scalazApply: scalaz.Apply[F] = scalazApplicative
 
   override def ap[A, B](ff: F[(A) => B])(fa: F[A]): F[B] =
     scalazApplicative.ap(fa)(ff)
@@ -97,8 +97,8 @@ object ArrowConverter extends ArrowConverter
 trait CatsApply[F[_]] extends CatsFunctor[F] {
   self: cats.Apply[F] =>
 
-  protected implicit val scalazApply: scalaz.Apply[F]
-  override protected implicit val scalazFunctor: scalaz.Functor[F] = scalazApply
+  protected implicit def scalazApply: scalaz.Apply[F]
+  override protected implicit lazy val scalazFunctor: scalaz.Functor[F] = scalazApply
 
   override def ap[A, B](ff: F[(A) => B])(fa: F[A]): F[B] =
     scalazApply.ap(fa)(ff)
@@ -127,7 +127,7 @@ trait CatsBifoldable[F[_, _]] {
 
   import cats.Eval
 
-  protected implicit val scalazBifoldable: scalaz.Bifoldable[F]
+  protected implicit def scalazBifoldable: scalaz.Bifoldable[F]
 
   override def bifoldLeft[A, B, C](fab: F[A, B], c: C)(f: (C, A) => C, g: (C, B) => C): C =
     scalazBifoldable.bifoldLeft(fab, c)(f)(g)
@@ -167,7 +167,7 @@ object BifoldableConverter extends BifoldableConverter
 trait CatsBifunctor[F[_, _]] {
   self: cats.functor.Bifunctor[F] =>
 
-  protected implicit val scalazBifunctor: scalaz.Bifunctor[F]
+  protected implicit def scalazBifunctor: scalaz.Bifunctor[F]
 
   override def bimap[A, B, C, D](fab: F[A, B])(f: (A) => C, g: (B) => D): F[C, D] =
     scalazBifunctor.bimap(fab)(f, g)
@@ -191,8 +191,8 @@ object BifunctorConverter extends BifunctorConverter
 trait CatsBind[F[_]] extends CatsApply[F] {
   self: cats.FlatMap[F] =>
 
-  protected implicit val scalazBindRec: scalaz.BindRec[F]
-  override protected implicit val scalazApply: scalaz.Apply[F] = scalazBindRec
+  protected implicit def scalazBindRec: scalaz.BindRec[F]
+  override protected implicit lazy val scalazApply: scalaz.Apply[F] = scalazBindRec
 
   override def flatMap[A, B](fa: F[A])(f: (A) => F[B]): F[B] =
     scalazBindRec.bind(fa)(a => f(a))
@@ -222,7 +222,7 @@ object BindConverter extends BindConverter
 trait CatsCategory[F[_, _]] {
   self: cats.arrow.Category[F] =>
 
-  protected implicit val scalazCategory: scalaz.Category[F]
+  protected implicit def scalazCategory: scalaz.Category[F]
 
   override def id[A]: F[A, A] =
     scalazCategory.id[A]
@@ -249,7 +249,7 @@ object CategoryConverter extends CategoryConverter
 trait CatsChoice[F[_, _]] {
   self: cats.arrow.Choice[F] =>
 
-  protected implicit val scalazChoice: scalaz.Choice[F]
+  protected implicit def scalazChoice: scalaz.Choice[F]
 
   override def choice[A, B, C](f: F[A, C], g: F[B, C]): F[Either[A, B], C] =
     ???
@@ -279,9 +279,9 @@ object ChoiceConverter extends ChoiceConverter
 trait CatsCoflatMap[F[_]] extends CatsFunctor[F] {
   self: cats.CoflatMap[F] =>
 
-  protected implicit val scalazCobind: scalaz.Cobind[F]
-  override protected implicit val scalazInvariantFunctor: scalaz.InvariantFunctor[F] = scalazCobind
-  override protected implicit val scalazFunctor: scalaz.Functor[F] = scalazCobind
+  protected implicit def scalazCobind: scalaz.Cobind[F]
+  override protected implicit lazy val scalazInvariantFunctor: scalaz.InvariantFunctor[F] = scalazCobind
+  override protected implicit lazy val scalazFunctor: scalaz.Functor[F] = scalazCobind
 
   override def coflatMap[A, B](fa: F[A])(f: (F[A]) => B): F[B] =
     scalazCobind.cobind(fa)((a: F[A]) => f(a))
@@ -308,8 +308,8 @@ object CoBindConverter extends CoBindConverter
 trait CatsComonad[F[_]] extends CatsCoflatMap[F] {
   self: cats.Comonad[F] =>
 
-  protected implicit val scalazComonad: scalaz.Comonad[F]
-  override protected implicit val scalazCobind: scalaz.Cobind[F] = scalazComonad
+  protected implicit def scalazComonad: scalaz.Comonad[F]
+  override protected implicit lazy val scalazCobind: scalaz.Cobind[F] = scalazComonad
 
   override def extract[A](x: F[A]): A =
     scalazComonad.copoint(x)
@@ -336,7 +336,7 @@ object ComonadConverter extends ComonadConverter
 trait CatsCompose[F[_, _]] {
   self: cats.arrow.Compose[F] =>
 
-  protected implicit val scalazCompose: scalaz.Compose[F]
+  protected implicit def scalazCompose: scalaz.Compose[F]
 
   override def compose[A, B, C](f: F[B, C], g: F[A, B]): F[A, C] =
     scalazCompose.compose(f, g)
@@ -360,7 +360,7 @@ object ComposeConverter extends ComposeConverter
 trait CatsContravariant[F[_]] {
   self: cats.functor.Contravariant[F] =>
 
-  protected implicit val scalazContravariant: scalaz.Contravariant[F]
+  protected implicit def scalazContravariant: scalaz.Contravariant[F]
 
   override def contramap[A, B](fa: F[A])(f: (B) => A): F[B] =
     scalazContravariant.contramap(fa)(f)
@@ -406,7 +406,7 @@ trait CatsFoldable[F[_]] {
 
   import cats.Eval
 
-  protected implicit val scalazFoldable: scalaz.Foldable[F]
+  protected implicit def scalazFoldable: scalaz.Foldable[F]
 
   override def foldLeft[A, B](fa: F[A], b: B)(f: (B, A) => B): B =
     scalazFoldable.foldLeft(fa, b)(f)
@@ -435,8 +435,8 @@ object FoldableConverter extends FoldableConverter
 trait CatsFunctor[F[_]] extends CatsInvariantFunctor[F] {
   self: cats.Functor[F] =>
 
-  protected implicit val scalazFunctor: scalaz.Functor[F]
-  override protected implicit val scalazInvariantFunctor: scalaz.InvariantFunctor[F] = scalazFunctor
+  protected implicit def scalazFunctor: scalaz.Functor[F]
+  override protected implicit lazy val scalazInvariantFunctor: scalaz.InvariantFunctor[F] = scalazFunctor
 
   override def map[A, B](fa: F[A])(f: (A) => B): F[B] =
     scalazFunctor.map(fa)(f)
@@ -463,7 +463,7 @@ object FunctorConverter extends FunctorConverter
 trait CatsInvariantFunctor[F[_]] {
   self: cats.functor.Invariant[F] =>
 
-  protected implicit val scalazInvariantFunctor: scalaz.InvariantFunctor[F]
+  protected implicit def scalazInvariantFunctor: scalaz.InvariantFunctor[F]
 
   override def imap[A, B](fa: F[A])(f: (A) => B)(g: (B) => A): F[B] =
     CatsInvariantFunctor.imap(fa)(f, g)(scalazInvariantFunctor)
@@ -493,8 +493,8 @@ trait CatsMonad[F[_]]
     with CatsApplicative[F] {
   self: cats.Monad[F] =>
 
-  protected implicit val scalazMonad: scalaz.Monad[F]
-  override protected implicit val scalazApplicative: scalaz.Applicative[F] = scalazMonad
+  protected implicit def scalazMonad: scalaz.Monad[F]
+  override protected implicit lazy val scalazApplicative: scalaz.Applicative[F] = scalazMonad
 }
 
 trait MonadConverter {
@@ -518,8 +518,8 @@ object MonadConverter extends MonadConverter
 trait CatsMonadError[F[_], E] extends CatsMonad[F] {
   self: cats.MonadError[F, E] =>
 
-  protected implicit val scalazMonadError: scalaz.MonadError[F, E]
-  override protected implicit val scalazMonad: scalaz.Monad[F] = scalazMonadError
+  protected implicit def scalazMonadError: scalaz.MonadError[F, E]
+  override protected implicit lazy val scalazMonad: scalaz.Monad[F] = scalazMonadError
 
   override def raiseError[A](e: E): F[A] =
     scalazMonadError.raiseError(e)
@@ -554,8 +554,8 @@ object MonadErrorConverter extends MonadErrorConverter
 trait CatsMonadReader[F[_], S] extends CatsMonad[F] {
   self: cats.MonadReader[F, S] =>
 
-  protected implicit val scalazMonadReader: scalaz.MonadReader[F, S]
-  override protected implicit val scalazMonad: scalaz.Monad[F] = scalazMonadReader
+  protected implicit def scalazMonadReader: scalaz.MonadReader[F, S]
+  override protected implicit lazy val scalazMonad: scalaz.Monad[F] = scalazMonadReader
 
   override def ask: F[S] =
     scalazMonadReader.ask
@@ -587,8 +587,8 @@ trait CatsMonadState[F[_], S]
   extends CatsMonad[F] {
   self: cats.MonadState[F, S] =>
 
-  protected implicit val scalazMonadState: scalaz.MonadState[F, S]
-  override protected implicit val scalazMonad: scalaz.Monad[F] = scalazMonadState
+  protected implicit def scalazMonadState: scalaz.MonadState[F, S]
+  override protected implicit lazy val scalazMonad: scalaz.Monad[F] = scalazMonadState
 
   override def get: F[S] =
     scalazMonadState.get
@@ -618,7 +618,7 @@ object MonadStateConverter extends MonadStateConverter
 trait CatsMonoid[F] {
   self: cats.Monoid[F] =>
 
-  protected implicit val scalazMonoid: scalaz.Monoid[F]
+  protected implicit def scalazMonoid: scalaz.Monoid[F]
 
   override def empty: F =
     scalazMonoid.zero
@@ -644,7 +644,7 @@ object MonoidConverter extends MonoidConverter
 trait CatsOrder[F] {
   self: cats.Order[F] =>
 
-  protected implicit val scalazOrder: scalaz.Order[F]
+  protected implicit def scalazOrder: scalaz.Order[F]
 
   override def compare(x: F, y: F): Int =
     scalazOrder.order(x, y).toInt
@@ -667,7 +667,7 @@ object OrderConverter extends OrderConverter
 trait CatsNaturalTransformation[F[_], G[_]] {
   self: cats.arrow.FunctionK[F, G] =>
 
-  protected implicit val scalazNaturalTransformation: scalaz.NaturalTransformation[F, G]
+  protected implicit def scalazNaturalTransformation: scalaz.NaturalTransformation[F, G]
 
   override def apply[A](fa: F[A]): G[A] =
     scalazNaturalTransformation.apply(fa)
@@ -691,7 +691,7 @@ object NaturalTransformationConverter extends NaturalTransformationConverter
 trait CatsShow[F] {
   self: cats.Show[F] =>
 
-  protected implicit val scalazShow: scalaz.Show[F]
+  protected implicit def scalazShow: scalaz.Show[F]
 
   override def show(f: F): String =
     scalazShow.shows(f)
@@ -716,9 +716,9 @@ trait CatsTraverse[F[_]] extends CatsFunctor[F] with CatsFoldable[F] {
 
   import harmony.toscalaz.typeclass.ApplicativeConverter._
 
-  protected implicit val scalazTraverse: scalaz.Traverse[F]
-  override protected implicit val scalazFunctor: scalaz.Functor[F] = scalazTraverse
-  override protected implicit val scalazFoldable: scalaz.Foldable[F] = scalazTraverse
+  protected implicit def scalazTraverse: scalaz.Traverse[F]
+  override protected implicit lazy val scalazFunctor: scalaz.Functor[F] = scalazTraverse
+  override protected implicit lazy val scalazFoldable: scalaz.Foldable[F] = scalazTraverse
 
   override def traverse[T[_], A, B](fa: F[A])(f: (A) => T[B])(implicit a: cats.Applicative[T]): T[F[B]] = {
     scalazTraverse.traverse(fa)(f)
