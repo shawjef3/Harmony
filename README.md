@@ -16,9 +16,9 @@ We can all live together!
 
 The naming scheme will change if Cats or Scalaz change their binary compatibility guarantees. Cats has no such guarantee.
 
-### Imports
-
 Harmony releases sharing an artifact name and major version should be binary compatible.
+
+### Imports
 
 | domain | codomain | type class | data types | both |
 | ------ | -------- | --------- | ---------- | ---- |
