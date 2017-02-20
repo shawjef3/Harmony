@@ -2,15 +2,18 @@ organization := "me.jeffshaw.harmony"
 
 name := "harmony_cats0.9.0_scalaz7.2"
 
-version := "1.0"
+version := "1.1-SNAPSHOT"
 
 scalaVersion := "2.12.1"
 
 crossScalaVersions := Seq("2.11.8", "2.10.6")
 
+mimaPreviousArtifacts := Set("me.jeffshaw.harmony" %% "harmony_cats0.9.0_scalaz7.2" % "1.0")
+
 libraryDependencies ++= Seq(
   "org.typelevel" %% "cats" % "0.9.0",
   "org.scalaz" %% "scalaz-core" % "7.2.8",
+  "org.scalaz" %% "scalaz-tests" % "7.2.8" % Test classifier "tests",
   "org.scalatest" %% "scalatest" % "3.0.1" % Test,
   "org.scalacheck" %% "scalacheck" % "1.13.4" % Test
 )
