@@ -151,7 +151,7 @@ trait ScalazBindRec[F[_]] extends ScalazApply[F] {
   self: scalaz.BindRec[F] =>
 
   protected implicit def catsFlatMap: cats.FlatMap[F]
-  override protected implicit val catsApply: Apply[F] = catsFlatMap
+  override protected implicit lazy val catsApply: Apply[F] = catsFlatMap
 
   override def bind[A, B](fa: F[A])(f: (A) => F[B]): F[B] =
     catsFlatMap.flatMap(fa)(s => f(s))
