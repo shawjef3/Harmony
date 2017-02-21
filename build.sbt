@@ -8,10 +8,8 @@ lazy val harmony =
     settings(
       organization := "me.jeffshaw.harmony",
       name := "harmony_cats0.9.0_scalaz7.2",
-      version := "1.1-SNAPSHOT",
-      scalaVersion := "2.12.1",
-      crossScalaVersions := Seq("2.11.8", "2.10.6"),
-      mimaPreviousArtifacts := Set("me.jeffshaw.harmony" %%% "harmony_cats0-8-1_scalaz7-2" % "1.0"),
+      version := "1.1",
+      mimaPreviousArtifacts := Set("me.jeffshaw.harmony" %%% "harmony_cats0-9.0_scalaz7-2" % "1.0"),
       libraryDependencies ++= Seq(
         "org.typelevel" %%% "cats" % "0.9.0",
         "org.scalaz" %%% "scalaz-core" % "7.2.8",
@@ -52,3 +50,6 @@ lazy val harmony =
 
 lazy val harmonyJVM = harmony.jvm
 lazy val harmonyJS = harmony.js
+
+scalaVersion in ThisBuild := "2.12.1"
+crossScalaVersions in ThisBuild := Seq("2.11.8", "2.10.6")
