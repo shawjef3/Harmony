@@ -22,7 +22,7 @@ Harmony releases sharing an artifact name and major version should be binary com
 
 | domain | codomain | type class | data types | both |
 | ------ | -------- | --------- | ---------- | ---- |
-| Cats   | Scalaz   | `import harmony.toscalaz.TypeClasses._` | `import harmony.tocats.Data._` | `import harmony.ToScalaz._` |
+| Cats   | Scalaz   | `import harmony.toscalaz.TypeClasses._` | `import harmony.toscalaz.Data._` | `import harmony.ToScalaz._` |
 | Scalaz   | Cats   | `import harmony.tocats.TypeClasses._` | `import harmony.tocats.Data._` | `import harmony.ToCats._` |
 
 Or, if you just want everyone to get along,
