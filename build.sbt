@@ -8,7 +8,7 @@ scalaVersion := "2.12.1"
 
 crossScalaVersions := Seq("2.11.8", "2.10.6")
 
-mimaPreviousArtifacts := Set("me.jeffshaw.harmony" %% "harmony_cats0.9.0_scalaz7.2" % "1.0")
+mimaPreviousArtifacts := Set("me.jeffshaw.harmony" %% "harmony_cats0-9-0_scalaz7-2" % "1.0")
 
 libraryDependencies ++= Seq(
   "org.typelevel" %% "cats" % "0.9.0",
