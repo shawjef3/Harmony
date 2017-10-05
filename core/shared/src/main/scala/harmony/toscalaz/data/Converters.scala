@@ -21,13 +21,13 @@ trait ComparisonConverter {
 object ComparisonConverter extends ComparisonConverter
 
 trait CoproductConverter {
-  implicit def catsToScalazCoproductNaturalTransformation[F[_], G[_], F0[_], G0[_]](implicit F: NaturalTransformation[F, F0], G: NaturalTransformation[G, G0]): NaturalTransformation[cats.data.Coproduct[F, G, ?], scalaz.Coproduct[F0, G0, ?]] =
-    new NaturalTransformation[cats.data.Coproduct[F, G, ?], scalaz.Coproduct[F0, G0, ?]] {
-      override def apply[A](fa: cats.data.Coproduct[F, G, A]): scalaz.Coproduct[F0, G0, A] =
+  implicit def catsToScalazCoproductNaturalTransformation[F[_], G[_], F0[_], G0[_]](implicit F: NaturalTransformation[F, F0], G: NaturalTransformation[G, G0]): NaturalTransformation[cats.data.EitherK[F, G, ?], scalaz.Coproduct[F0, G0, ?]] =
+    new NaturalTransformation[cats.data.EitherK[F, G, ?], scalaz.Coproduct[F0, G0, ?]] {
+      override def apply[A](fa: cats.data.EitherK[F, G, A]): scalaz.Coproduct[F0, G0, A] =
         scalaz.Coproduct[F0, G0, A](fa.run.fold((a: F[A]) => scalaz.DLeft(F.apply(a)), (a: G[A]) => scalaz.DRight(G.apply(a))))
     }
 
-  implicit def catsToScalazCoproductValue[F[_], G[_], F0[_], G0[_], A](inner: cats.data.Coproduct[F, G, A])(implicit F: NaturalTransformation[F, F0], G: NaturalTransformation[G, G0]): scalaz.Coproduct[F0, G0, A] =
+  implicit def catsToScalazCoproductValue[F[_], G[_], F0[_], G0[_], A](inner: cats.data.EitherK[F, G, A])(implicit F: NaturalTransformation[F, F0], G: NaturalTransformation[G, G0]): scalaz.Coproduct[F0, G0, A] =
     catsToScalazCoproductNaturalTransformation[F, G, F0, G0].apply[A](inner)
 }
 

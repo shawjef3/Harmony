@@ -22,8 +22,6 @@ trait TypeClass
     with InvariantFunctorConverter
     with MonadConverter
     with MonadErrorConverter
-    with MonadReaderConverter
-    with MonadStateConverter
     with MonoidConverter
     with OrderConverter
     with SemigroupConverter

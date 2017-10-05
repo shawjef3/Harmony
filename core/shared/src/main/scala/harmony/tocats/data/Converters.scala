@@ -1,18 +1,18 @@
 package harmony.tocats.data
 
 import cats.Eval
-import harmony.{NaturalTransformation, BiNaturalTransformation}
+import harmony.{BiNaturalTransformation, NaturalTransformation}
 import scalaz.Name
 
 trait CoproductConverter {
-  implicit def scalazToCatsCoproductNaturalTransformation[F[_], G[_], F0[_], G0[_]](implicit F: NaturalTransformation[F, F0], G: NaturalTransformation[G, G0]): NaturalTransformation[scalaz.Coproduct[F, G, ?], cats.data.Coproduct[F0, G0, ?]] =
-    new NaturalTransformation[scalaz.Coproduct[F, G, ?], cats.data.Coproduct[F0, G0, ?]] {
-      override def apply[A](fa: scalaz.Coproduct[F, G, A]): cats.data.Coproduct[F0, G0, A] =
-        cats.data.Coproduct[F0, G0, A](fa.run.bimap(F.apply, G.apply).toEither)
+  implicit def scalazToCatsEitherKNaturalTransformation[F[_], G[_], F0[_], G0[_]](implicit F: NaturalTransformation[F, F0], G: NaturalTransformation[G, G0]): NaturalTransformation[scalaz.Coproduct[F, G, ?], cats.data.EitherK[F0, G0, ?]] =
+    new NaturalTransformation[scalaz.Coproduct[F, G, ?], cats.data.EitherK[F0, G0, ?]] {
+      override def apply[A](fa: scalaz.Coproduct[F, G, A]): cats.data.EitherK[F0, G0, A] =
+        cats.data.EitherK[F0, G0, A](fa.run.bimap(F.apply, G.apply).toEither)
     }
 
-  implicit def scalazToCatsCoproduct[F[_], G[_], F0[_], G0[_], A](inner: scalaz.Coproduct[F, G, A])(implicit F: NaturalTransformation[F, F0], G: NaturalTransformation[G, G0]): cats.data.Coproduct[F0, G0, A] =
-    scalazToCatsCoproductNaturalTransformation[F, G, F0, G0].apply[A](inner)
+  implicit def scalazToCatsEitherK[F[_], G[_], F0[_], G0[_], A](inner: scalaz.Coproduct[F, G, A])(implicit F: NaturalTransformation[F, F0], G: NaturalTransformation[G, G0]): cats.data.EitherK[F0, G0, A] =
+    scalazToCatsEitherKNaturalTransformation[F, G, F0, G0].apply[A](inner)
 
 }
 
