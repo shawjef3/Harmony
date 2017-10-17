@@ -25,7 +25,10 @@ lazy val core =
       }),
       //better type syntax from https://github.com/non/kind-projector
       addCompilerPlugin("org.spire-math" % "kind-projector" % "0.9.3" cross CrossVersion.binary),
-      pomExtra := Common.pomExtra
+      pomExtra := Common.pomExtra,
+      publishMavenStyle := true,
+      scalaVersion := Common.scalaVersion,
+      crossScalaVersions := Common.crossScalaVersions
 )
 
 lazy val coreJVM = core.jvm
@@ -52,12 +55,13 @@ lazy val mtl =
     }),
     //better type syntax from https://github.com/non/kind-projector
     addCompilerPlugin("org.spire-math" % "kind-projector" % "0.9.3" cross CrossVersion.binary),
-    pomExtra := Common.pomExtra
+    pomExtra := Common.pomExtra,
+    publishMavenStyle := true
   ).
   dependsOn(core)
 
 lazy val mtlJVM = mtl.jvm
 lazy val mtlJS = mtl.js
 
-scalaVersion in ThisBuild := "2.12.3"
-crossScalaVersions in ThisBuild := Seq("2.11.11", "2.10.6")
+scalaVersion in Scope.GlobalScope := "2.12.3"
+crossScalaVersions in Scope.GlobalScope := Seq("2.11.11", "2.10.6")

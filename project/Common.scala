@@ -1,9 +1,7 @@
-import sbt.Keys.pomExtra
-
 object Common {
   val organization = "me.jeffshaw.harmony"
 
-  val version = "1.2"
+  val version = "2.0"
 
   val pomExtra =
       <url>https://github.com/shawjef3/Harmony</url>
