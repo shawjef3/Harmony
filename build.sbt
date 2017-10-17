@@ -12,7 +12,7 @@ lazy val core =
       mimaPreviousArtifacts := Set(),
       libraryDependencies ++= Seq(
         "org.typelevel" %%% "cats-free" % "1.0.0-MF",
-        "org.scalaz" %%% "scalaz-core" % "7.2.8",
+        "org.scalaz" %%% "scalaz-core" % "7.2.15",
         //  "org.scalaz" %% "scalaz-tests" % "7.2.8" % Test classifier "tests",
         "org.scalatest" %%% "scalatest" % "3.0.1" % Test,
         "org.scalacheck" %%% "scalacheck" % "1.13.4" % Test

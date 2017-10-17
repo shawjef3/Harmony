@@ -11,7 +11,7 @@ trait TypeClass
     with BifunctorConverter
     with BindConverter
     with CategoryConverter
-//    with ChoiceConverter
+    with ChoiceConverter
     with CoBindConverter
     with ComonadConverter
     with ComposeConverter
@@ -27,6 +27,7 @@ trait TypeClass
     with OrderConverter
     with ShowConverter
     with TraverseConverter
+    with ProfunctorConverter
 
 object TypeClass
   extends TypeClass
