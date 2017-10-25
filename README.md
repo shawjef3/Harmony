@@ -13,15 +13,15 @@ We can all live together!
 
 | cats version | scalaz version | harmony version | dependency |
 | ------------ | -------------- | --------------- | ---------- |
-| 0.8.1        | 7.2.*          | 1.1          | `"me.jeffshaw" %% "harmony_cats0.8.1_scalaz7.2" % "1.1"` |
-| 0.9.0        | 7.2.*          | 1.1          | `"me.jeffshaw" %% "harmony_cats0.9.0_scalaz7.2" % "1.1"` |
-| 1.0.0-MF    | 7.2.*           | 2.0          | `"me.jeffshaw" %% "harmony_cats1.0.0-MF_scalaz7.2" % "2.0"` |
+| 0.8.1        | 7.2.*          | 1.1          | `"me.jeffshaw.harmony" %% "harmony_cats0-8-1_scalaz7-2" % "1.1"` |
+| 0.9.0        | 7.2.*          | 1.1          | `"me.jeffshaw.harmony" %% "harmony_cats0-9-0_scalaz7-2" % "1.1"` |
+| 1.0.0-MF    | 7.2.*           | 2.0          | `"me.jeffshaw.harmony" %% "harmony_cats1-0-0-mf_scalaz7-2" % "2.0"` |
 
 #### cats-mtl-core
 
 | cats version | scalaz version | harmony version | dependency |
 | ------------ | -------------- | --------------- | ---------- |
-| 0.0.2        | 7.2.*          | 2.0          | `"me.jeffshaw" %% "harmony_cats-mtl-core0.0.2_scalaz7.2" % "2.0"` |
+| 0.0.2        | 7.2.*          | 2.0          | `"me.jeffshaw.harmony" %% "harmony_cats-mtl-core0-0-2_scalaz7-2" % "2.0"` |
 
 The naming scheme will change if Cats or Scalaz change their binary compatibility guarantees. Cats has no such guarantee.
 
